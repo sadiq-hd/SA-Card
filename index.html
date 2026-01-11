@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🪪 ID Card Generator</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+    
+    <!-- Google Fonts - Manifa -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🪪 ID Card Generator</h1>
+        
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <div class="upload-box" id="excelBox">
+                <input type="file" id="excelFile" accept=".xlsx,.xls">
+                <label for="excelFile">
+                    📊<br>Upload Excel File<br>
+                    <small>(Badge #, First name, Last name)</small>
+                </label>
+            </div>
+            
+            <div class="upload-box uploaded" id="frontBox">
+                <input type="file" id="frontImage" accept="image/*">
+                <label for="frontImage">
+                    🎨<br>Front Template<br>
+                    <small>Loading...</small>
+                </label>
+            </div>
+            
+            <div class="upload-box uploaded" id="backBox">
+                <input type="file" id="backImage" accept="image/*">
+                <label for="backImage">
+                    🎨<br>Back Template<br>
+                    <small>Loading...</small>
+                </label>
+            </div>
+        </div>
+
+        <!-- Card Settings -->
+        <div class="settings">
+            <h3>⚙️ Card Settings</h3>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <label>Card Width (cm) - Landscape</label>
+                    <input type="number" id="cardWidth" value="8.5" step="0.1" min="1">
+                </div>
+                <div class="setting-item">
+                    <label>Card Height (cm) - Landscape</label>
+                    <input type="number" id="cardHeight" value="5.4" step="0.1" min="1">
+                </div>
+                <div class="setting-item">
+                    <label>DPI (Quality)</label>
+                    <input type="number" id="cardDPI" value="300" step="50" min="100" max="600">
+                </div>
+                <div class="setting-item" style="grid-column: 1/-1;">
+                    <div style="background: #e8ebff; padding: 10px; border-radius: 8px; font-size: 12px;">
+                        📏 <strong>Current size:</strong> <span id="dimensionDisplay">1004 x 638 pixels</span>
+                        <br>💡 Standard ID card: 8.5cm × 5.4cm (landscape)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Front Card Settings -->
+        <div class="settings">
+            <h3>📄 Front Card - Name Settings</h3>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <label>Name X Position (px)</label>
+                    <input type="number" id="nameX" value="250" step="5">
+                </div>
+                <div class="setting-item">
+                    <label>Name Y Position (px)</label>
+                    <input type="number" id="nameY" value="400" step="5">
+                </div>
+                <div class="setting-item">
+                    <label>Name Font Size (px)</label>
+                    <input type="number" id="nameFontSize" value="40" step="2" min="10" max="100">
+                </div>
+                <div class="setting-item">
+                    <label>Name Font Weight</label>
+                    <select id="nameFontWeight">
+                        <option value="normal">Normal</option>
+                        <option value="bold" selected>Bold</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label>Name Color</label>
+                    <input type="color" id="nameColor" value="#000000">
+                </div>
+            </div>
+        </div>
+
+        <!-- Front Card - Badge Settings -->
+        <div class="settings">
+            <h3>🔖 Front Card - Badge Settings</h3>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <label>"Badge NO:" X Position (px)</label>
+                    <input type="number" id="badgeLabelX" value="250" step="5">
+                </div>
+                <div class="setting-item">
+                    <label>"Badge NO:" Y Position (px)</label>
+                    <input type="number" id="badgeLabelY" value="480" step="5">
+                </div>
+                <div class="setting-item">
+                    <label>"Badge NO:" Font Size (px)</label>
+                    <input type="number" id="badgeLabelSize" value="20" step="2" min="10" max="60">
+                </div>
+                <div class="setting-item">
+                    <label>Badge Number X Position (px)</label>
+                    <input type="number" id="badgeNumX" value="350" step="5">
+                </div>
+                <div class="setting-item">
+                    <label>Badge Number Y Position (px)</label>
+                    <input type="number" id="badgeNumY" value="475" step="5">
+                </div>
+                <div class="setting-item">
+                    <label>Badge Number Font Size (px)</label>
+                    <input type="number" id="badgeNumSize" value="45" step="2" min="10" max="100">
+                </div>
+                <div class="setting-item">
+                    <label>Badge Font Weight</label>
+                    <select id="badgeFontWeight">
+                        <option value="normal">Normal</option>
+                        <option value="bold" selected>Bold</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back Card - Barcode Settings -->
+        <div class="settings">
+            <h3>📊 Back Card - Barcode Settings</h3>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <label>Barcode X Position (px)</label>
+                    <input type="number" id="barcodeX" value="50" step="5">
+                </div>
+                <div class="setting-item">
+                    <label>Barcode Y Position (px)</label>
+                    <input type="number" id="barcodeY" value="850" step="5">
+                </div>
+                <div class="setting-item">
+                    <label>Barcode Width (px)</label>
+                    <input type="number" id="barcodeWidth" value="600" step="10" min="100">
+                </div>
+                <div class="setting-item">
+                    <label>Barcode Height (px)</label>
+                    <input type="number" id="barcodeHeight" value="120" step="10" min="50">
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="buttons">
+            <button class="btn-preview" onclick="generatePreview()">🔍 Preview First Card</button>
+            <button class="btn-generate" onclick="generateAllCards()">📦 Generate All Cards</button>
+            <button class="btn-print" onclick="printAllCards()" style="display:none;" id="printBtn">🖨️ Print All Cards</button>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress" id="progressBar">
+            <div class="progress-bar" id="progressBarFill">0%</div>
+        </div>
+
+        <!-- Preview Section -->
+        <div id="preview"></div>
+
+        <!-- All Cards (Hidden, for printing) -->
+        <div id="allCards"></div>
+    </div>
+
+    <!-- Custom Script -->
+    <script src="script.js"></script>
+</body>
+</html>
