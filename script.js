@@ -1,3 +1,6 @@
+// ============================
+// Global Variables
+// ============================
 let excelData = [];
 let frontTemplate = null;
 let backTemplate = null;
@@ -8,18 +11,19 @@ let positions = {
     front: {
         nameX: 150,
         nameY: 300,
-        nameFontSize: 72,
+        nameFontSize: 62,
         badgeX: 150,
         badgeY: 380,
-        badgeFontSize: 72
+        badgeFontSize: 62
     },
     back: {
         barcodeX: 50,
         barcodeY: 150,
-        barcodeWidth: 700,
-        barcodeHeight: 150,
+        barcodeWidth: 450,
+        barcodeHeight: 100,
+        textX: 275,  // Added X position for text
         textY: 320,
-        textSize: 48
+        textSize: 28
     }
 };
 
@@ -40,7 +44,6 @@ document.getElementById('excelFile').addEventListener('change', function(e) {
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
             const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
             
-            // Debug: Show all column names
             if (jsonData.length > 0) {
                 const columns = Object.keys(jsonData[0]);
                 console.log('=== EXCEL COLUMNS ===');
@@ -52,14 +55,12 @@ document.getElementById('excelFile').addEventListener('change', function(e) {
             }
             
             excelData = jsonData.map((row, idx) => {
-                // Get all possible values for each field
                 const allKeys = Object.keys(row);
                 
                 let badge = '';
                 let firstName = '';
                 let lastName = '';
                 
-                // Find badge
                 for (let key of allKeys) {
                     const lowerKey = key.toLowerCase().trim();
                     if (lowerKey.includes('badge')) {
@@ -68,7 +69,6 @@ document.getElementById('excelFile').addEventListener('change', function(e) {
                     }
                 }
                 
-                // Find first name
                 for (let key of allKeys) {
                     const lowerKey = key.toLowerCase().trim();
                     if (lowerKey.includes('first')) {
@@ -77,7 +77,6 @@ document.getElementById('excelFile').addEventListener('change', function(e) {
                     }
                 }
                 
-                // Find last name
                 for (let key of allKeys) {
                     const lowerKey = key.toLowerCase().trim();
                     if (lowerKey.includes('last')) {
@@ -129,7 +128,6 @@ document.getElementById('frontImage').addEventListener('change', function(e) {
             document.getElementById('frontBox').classList.add('uploaded');
             document.getElementById('frontBox').querySelector('label').innerHTML = 
                 '✅<br>Front Template<br><small>Ready to use</small>';
-            console.log('Front template loaded:', img.width, 'x', img.height);
         };
         img.src = event.target.result;
     };
@@ -160,82 +158,74 @@ document.getElementById('backImage').addEventListener('change', function(e) {
 // Canvas Drawing Functions
 // ============================
 
-function drawFrontCard(canvas, employee) {
+function drawFrontCard(canvas, employee, hideText = false) {
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     
-    // Clear and draw template
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     if (frontTemplate) {
-        // Center the template if canvas is larger
-        const x = (canvas.width - frontTemplate.width) / 2;
-        const y = (canvas.height - frontTemplate.height) / 2;
-        ctx.drawImage(frontTemplate, x, y, frontTemplate.width, frontTemplate.height);
+        ctx.drawImage(frontTemplate, 0, 0, frontTemplate.width, frontTemplate.height);
     }
     
-    // Setup text rendering with bold
-    ctx.fillStyle = '#323232';
-    ctx.textBaseline = 'top';
-    ctx.textAlign = 'left';
-    
-    // Draw full name (First + Last)
-    const fullName = `${employee.firstName} ${employee.lastName}`;
-    ctx.font = `900 ${positions.front.nameFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
-    ctx.fillText(fullName, positions.front.nameX, positions.front.nameY);
-    
-    // Draw badge number only (no label)
-    ctx.font = `900 ${positions.front.badgeFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
-    ctx.fillText(employee.badge, positions.front.badgeX, positions.front.badgeY);
+    // Only draw text if hideText is false
+    if (!hideText) {
+        ctx.fillStyle = '#323232';
+        ctx.textBaseline = 'top';
+        ctx.textAlign = 'left';
+        
+        const fullName = `${employee.firstName} ${employee.lastName}`;
+        ctx.font = `900 ${positions.front.nameFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
+        ctx.fillText(fullName, positions.front.nameX, positions.front.nameY);
+        
+        ctx.font = `900 ${positions.front.badgeFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
+        ctx.fillText(employee.badge, positions.front.badgeX, positions.front.badgeY);
+    }
 }
 
-function drawBackCard(canvas, employee) {
+function drawBackCard(canvas, employee, hideText = false) {
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     
-    // Clear and draw template
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     if (backTemplate) {
-        // Center the template if canvas is larger
-        const x = (canvas.width - backTemplate.width) / 2;
-        const y = (canvas.height - backTemplate.height) / 2;
-        ctx.drawImage(backTemplate, x, y, backTemplate.width, backTemplate.height);
+        ctx.drawImage(backTemplate, 0, 0, backTemplate.width, backTemplate.height);
     }
     
-    // Generate and draw barcode
-    const barcodeCanvas = document.createElement('canvas');
-    try {
-        JsBarcode(barcodeCanvas, employee.badge, {
-            format: 'CODE128',
-            width: 3,
-            height: 150,
-            displayValue: false,
-            margin: 0
-        });
-        
-        if (barcodeCanvas.width > 0) {
-            ctx.drawImage(
-                barcodeCanvas,
-                positions.back.barcodeX,
-                positions.back.barcodeY,
-                positions.back.barcodeWidth,
-                positions.back.barcodeHeight
-            );
+    // Only draw barcode and text if hideText is false
+    if (!hideText) {
+        const barcodeCanvas = document.createElement('canvas');
+        try {
+            JsBarcode(barcodeCanvas, employee.badge, {
+                format: 'CODE39',
+                width: 3,
+                height: 150,
+                displayValue: false,
+                margin: 0
+            });
+            
+            if (barcodeCanvas.width > 0) {
+                ctx.drawImage(
+                    barcodeCanvas,
+                    positions.back.barcodeX,
+                    positions.back.barcodeY,
+                    positions.back.barcodeWidth,
+                    positions.back.barcodeHeight
+                );
+            }
+        } catch (error) {
+            console.error('Barcode generation error:', error);
         }
-    } catch (error) {
-        console.error('Barcode generation error:', error);
+        
+        ctx.fillStyle = '#323232';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.font = `900 ${positions.back.textSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
+        ctx.fillText(employee.badge, positions.back.textX, positions.back.textY);
     }
-    
-    // Draw badge number text below barcode
-    ctx.fillStyle = '#323232';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.font = `900 ${positions.back.textSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
-    const centerX = positions.back.barcodeX + (positions.back.barcodeWidth / 2);
-    ctx.fillText(employee.badge, centerX, positions.back.textY);
 }
 
 // ============================
@@ -280,7 +270,6 @@ function makeDraggable(element, side, itemType) {
         isDragging = false;
         element.classList.remove('active');
         
-        // Calculate final position relative to canvas
         const container = element.parentElement;
         const canvas = container.querySelector('canvas');
         const canvasRect = canvas.getBoundingClientRect();
@@ -292,7 +281,6 @@ function makeDraggable(element, side, itemType) {
         const finalX = Math.round((elementRect.left - canvasRect.left) * scaleX);
         const finalY = Math.round((elementRect.top - canvasRect.top) * scaleY);
         
-        // Update positions
         if (side === 'front') {
             if (itemType === 'name') {
                 positions.front.nameX = finalX;
@@ -306,16 +294,17 @@ function makeDraggable(element, side, itemType) {
                 positions.back.barcodeX = finalX;
                 positions.back.barcodeY = finalY;
             } else if (itemType === 'text') {
+                // Update both X and Y for text
+                positions.back.textX = finalX;
                 positions.back.textY = finalY;
             }
         }
         
-        // Redraw canvas with new positions
         const employee = excelData[0];
         if (side === 'front') {
-            drawFrontCard(canvas, employee);
+            drawFrontCard(canvas, employee, true); // Hide text in preview mode
         } else {
-            drawBackCard(canvas, employee);
+            drawBackCard(canvas, employee, true); // Hide text in preview mode
         }
         
         console.log('Updated positions:', positions);
@@ -363,23 +352,20 @@ function generatePreview() {
         const frontCanvas = document.getElementById('previewFront');
         const backCanvas = document.getElementById('previewBack');
         
-        // Set canvas dimensions to match templates
         frontCanvas.width = frontTemplate.width;
         frontCanvas.height = frontTemplate.height;
         backCanvas.width = backTemplate.width;
         backCanvas.height = backTemplate.height;
         
-        // Draw cards
-        drawFrontCard(frontCanvas, employee);
-        drawBackCard(backCanvas, employee);
+        // Draw cards without text (will be shown by draggable elements)
+        drawFrontCard(frontCanvas, employee, true);
+        drawBackCard(backCanvas, employee, true);
         
-        // Add draggable elements for front card
         const frontContainer = document.getElementById('frontContainer');
         const canvasRect = frontCanvas.getBoundingClientRect();
         const scaleX = canvasRect.width / frontCanvas.width;
         const scaleY = canvasRect.height / frontCanvas.height;
         
-        // Name draggable
         const nameDiv = document.createElement('div');
         nameDiv.className = 'draggable-item';
         nameDiv.textContent = `${employee.firstName} ${employee.lastName}`;
@@ -389,7 +375,6 @@ function generatePreview() {
         frontContainer.appendChild(nameDiv);
         makeDraggable(nameDiv, 'front', 'name');
         
-        // Badge draggable
         const badgeDiv = document.createElement('div');
         badgeDiv.className = 'draggable-item';
         badgeDiv.textContent = employee.badge;
@@ -399,7 +384,6 @@ function generatePreview() {
         frontContainer.appendChild(badgeDiv);
         makeDraggable(badgeDiv, 'front', 'badge');
         
-        // Add draggable element for back card barcode
         const backContainer = document.getElementById('backContainer');
         const backCanvasRect = backCanvas.getBoundingClientRect();
         const backScaleX = backCanvasRect.width / backCanvas.width;
@@ -418,13 +402,15 @@ function generatePreview() {
         backContainer.appendChild(barcodeDiv);
         makeDraggable(barcodeDiv, 'back', 'barcode');
         
-        // Badge number text below barcode (draggable)
+        // Text is now movable in X and Y directions
         const barcodeTextDiv = document.createElement('div');
         barcodeTextDiv.className = 'draggable-item';
         barcodeTextDiv.textContent = employee.badge;
-        barcodeTextDiv.style.left = ((positions.back.barcodeX + positions.back.barcodeWidth/2 - 100) * backScaleX) + 'px';
+        barcodeTextDiv.style.left = (positions.back.textX * backScaleX) + 'px';
         barcodeTextDiv.style.top = (positions.back.textY * backScaleY) + 'px';
         barcodeTextDiv.style.fontSize = (positions.back.textSize * backScaleX) + 'px';
+        barcodeTextDiv.style.width = '200px';
+        barcodeTextDiv.style.textAlign = 'center';
         backContainer.appendChild(barcodeTextDiv);
         makeDraggable(barcodeTextDiv, 'back', 'text');
         
@@ -444,7 +430,6 @@ function generateAllCards() {
         return;
     }
     
-    // Check if templates have same dimensions
     if (frontTemplate.width !== backTemplate.width || frontTemplate.height !== backTemplate.height) {
         const proceed = confirm(
             `⚠️ Warning: Template dimensions don't match!\n\n` +
@@ -463,19 +448,16 @@ function generateAllCards() {
     
     let processed = 0;
     
-    // Use the larger dimensions to ensure both cards fit
     const maxWidth = Math.max(frontTemplate.width, backTemplate.width);
     const maxHeight = Math.max(frontTemplate.height, backTemplate.height);
     
     excelData.forEach((employee, index) => {
         setTimeout(() => {
-            // Create front card with consistent dimensions
             const frontCanvas = document.createElement('canvas');
             frontCanvas.width = maxWidth;
             frontCanvas.height = maxHeight;
             drawFrontCard(frontCanvas, employee);
             
-            // Create back card with consistent dimensions
             const backCanvas = document.createElement('canvas');
             backCanvas.width = maxWidth;
             backCanvas.height = maxHeight;
@@ -538,7 +520,6 @@ function showPrintPreview() {
         printContent.appendChild(cardPair);
     });
     
-    // Show print preview and scroll to it
     printPreview.style.display = 'block';
     printPreview.scrollIntoView({ behavior: 'smooth' });
     
@@ -555,7 +536,7 @@ function closePrintPreview() {
 }
 
 // ============================
-// Download All Cards (Keep as backup option)
+// Download All Cards
 // ============================
 function downloadAllCards() {
     if (!generatedCards.length) {
@@ -563,11 +544,9 @@ function downloadAllCards() {
         return;
     }
     
-    // Create a combined PDF-style download (front and back together)
     const downloadMethod = confirm('Choose download method:\n\nOK = Combined PDF (Front + Back together)\nCancel = Separate images');
     
     if (downloadMethod) {
-        // Download as combined images (front + back side by side)
         generatedCards.forEach((card, index) => {
             setTimeout(() => {
                 const combinedCanvas = document.createElement('canvas');
@@ -576,25 +555,21 @@ function downloadAllCards() {
                 
                 img1.onload = function() {
                     img2.onload = function() {
-                        // Set canvas to hold both images side by side
-                        combinedCanvas.width = img1.width + img2.width + 40; // 40px gap
+                        combinedCanvas.width = img1.width + img2.width + 40;
                         combinedCanvas.height = Math.max(img1.height, img2.height) + 40;
                         
                         const ctx = combinedCanvas.getContext('2d');
                         ctx.fillStyle = '#ffffff';
                         ctx.fillRect(0, 0, combinedCanvas.width, combinedCanvas.height);
                         
-                        // Draw front
                         ctx.fillStyle = '#333';
                         ctx.font = 'bold 20px Arial';
                         ctx.fillText('FRONT', 20, 30);
                         ctx.drawImage(img1, 20, 50);
                         
-                        // Draw back
                         ctx.fillText('BACK', img1.width + 60, 30);
                         ctx.drawImage(img2, img1.width + 60, 50);
                         
-                        // Download
                         const link = document.createElement('a');
                         link.href = combinedCanvas.toDataURL('image/png');
                         link.download = `${card.employee.firstName}_${card.employee.lastName}_Badge_${card.employee.badge}.png`;
@@ -608,16 +583,13 @@ function downloadAllCards() {
         
         alert(`✅ Downloading ${generatedCards.length} combined cards...`);
     } else {
-        // Download separate images
         generatedCards.forEach((card, index) => {
             setTimeout(() => {
-                // Download front
                 const frontLink = document.createElement('a');
                 frontLink.href = card.front;
                 frontLink.download = `${card.employee.firstName}_${card.employee.lastName}_${card.employee.badge}_FRONT.png`;
                 frontLink.click();
                 
-                // Download back
                 setTimeout(() => {
                     const backLink = document.createElement('a');
                     backLink.href = card.back;
