@@ -3,6 +3,12 @@
    ============================ */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@700&display=swap');
 
+@font-face {
+  font-family: 'ManifaV2';
+  src: url('/assets/fonts/ManifaV2-Bold.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+}
 /* ============================
    Global Styles
    ============================ */

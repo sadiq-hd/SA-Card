@@ -9,12 +9,12 @@ let generatedCards = [];
 // Position settings (stored in memory)
 let positions = {
     front: {
-        nameX: 150,
-        nameY: 300,
-        nameFontSize: 62,
-        badgeX: 150,
-        badgeY: 380,
-        badgeFontSize: 62
+        nameX: 330,        // كان 150 - نقلناه لمركز الصندوق الأزرق
+        nameY: 385,        // كان 300 - نقلناه لمركز الصندوق الأزرق
+        nameFontSize: 52,  // كان 62 - خففناه قليلاً
+        badgeX: 330,       // كان 150 - نقلناه لمركز الصندوق الأزرق السفلي
+        badgeY: 455,       // كان 380 - نقلناه لمركز الصندوق الأزرق السفلي
+        badgeFontSize: 58  // كان 62 - خففناه قليلاً
     },
     back: {
         barcodeX: 50,
@@ -170,18 +170,20 @@ function drawFrontCard(canvas, employee, hideText = false) {
     }
     
     // Only draw text if hideText is false
-    if (!hideText) {
-        ctx.fillStyle = '#323232';
-        ctx.textBaseline = 'top';
-        ctx.textAlign = 'left';
-        
-        const fullName = `${employee.firstName} ${employee.lastName}`;
-        ctx.font = `900 ${positions.front.nameFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
-        ctx.fillText(fullName, positions.front.nameX, positions.front.nameY);
-        
-        ctx.font = `900 ${positions.front.badgeFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
-        ctx.fillText(employee.badge, positions.front.badgeX, positions.front.badgeY);
-    }
+   if (!hideText) {
+    ctx.fillStyle = '#323232';
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+    
+    const fullName = `${employee.firstName} ${employee.lastName}`;
+
+    ctx.font = `900 ${positions.front.nameFontSize}px 'ManifaV2', Arial, sans-serif`;
+    ctx.fillText(fullName, positions.front.nameX, positions.front.nameY);
+    
+    ctx.font = `900 ${positions.front.badgeFontSize}px 'ManifaV2', Arial, sans-serif`;
+    ctx.fillText(employee.badge, positions.front.badgeX, positions.front.badgeY);
+}
+
 }
 
 function drawBackCard(canvas, employee, hideText = false) {
