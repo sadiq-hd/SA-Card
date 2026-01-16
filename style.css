@@ -304,3 +304,32 @@ button:disabled {
         flex-direction: column;
     }
 }
+@media print {
+  body * {
+    display: none;
+  }
+
+  #printPreview, #printPreview * {
+    display: block;
+  }
+
+  .print-card-pair {
+    page-break-after: always;
+  }
+
+  .card-sides {
+    display: flex;
+    flex-direction: column;
+  }
+
+  img {
+    width: 85.6mm;
+    height: 53.98mm;
+    display: block;
+  }
+
+  @page {
+    size: 85.6mm 53.98mm;
+    margin: 0;
+  }
+}

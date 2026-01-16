@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🪪 ID Card Generator</title>
@@ -9,6 +8,7 @@
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     
     <!-- Custom Styles -->
     <link rel="stylesheet" href="style.css">
@@ -58,6 +58,7 @@
         <div class="buttons">
             <button class="btn-preview" onclick="generatePreview()">🔍 Preview First Card</button>
             <button class="btn-generate" onclick="generateAllCards()">📦 Generate All Cards</button>
+            <button class="btn-download" onclick="downloadAllCards()" style="display:none;" id="downloadZipBtn">💾 Download ZIP</button>
             <button class="btn-download" onclick="showPrintPreview()" style="display:none;" id="downloadBtn">🖨️ Print Preview</button>
         </div>
 

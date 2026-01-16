@@ -9,19 +9,19 @@ let generatedCards = [];
 // Position settings (stored in memory)
 let positions = {
     front: {
-        nameX: 330,        // كان 150 - نقلناه لمركز الصندوق الأزرق
-        nameY: 385,        // كان 300 - نقلناه لمركز الصندوق الأزرق
-        nameFontSize: 52,  // كان 62 - خففناه قليلاً
-        badgeX: 330,       // كان 150 - نقلناه لمركز الصندوق الأزرق السفلي
-        badgeY: 455,       // كان 380 - نقلناه لمركز الصندوق الأزرق السفلي
-        badgeFontSize: 58  // كان 62 - خففناه قليلاً
+        nameX: 150,
+        nameY: 300,
+        nameFontSize: 62,
+        badgeX: 150,
+        badgeY: 380,
+        badgeFontSize: 62
     },
     back: {
         barcodeX: 50,
         barcodeY: 150,
         barcodeWidth: 450,
         barcodeHeight: 100,
-        textX: 275,  // Added X position for text
+        textX: 275,
         textY: 320,
         textSize: 28
     }
@@ -169,21 +169,47 @@ function drawFrontCard(canvas, employee, hideText = false) {
         ctx.drawImage(frontTemplate, 0, 0, frontTemplate.width, frontTemplate.height);
     }
     
-    // Only draw text if hideText is false
-   if (!hideText) {
-    ctx.fillStyle = '#323232';
-    ctx.textBaseline = 'top';
-    ctx.textAlign = 'left';
-    
-    const fullName = `${employee.firstName} ${employee.lastName}`;
-
-    ctx.font = `900 ${positions.front.nameFontSize}px 'ManifaV2', Arial, sans-serif`;
-    ctx.fillText(fullName, positions.front.nameX, positions.front.nameY);
-    
-    ctx.font = `900 ${positions.front.badgeFontSize}px 'ManifaV2', Arial, sans-serif`;
-    ctx.fillText(employee.badge, positions.front.badgeX, positions.front.badgeY);
-}
-
+    if (!hideText) {
+        ctx.fillStyle = '#323232';
+        ctx.textBaseline = 'top';
+        
+        // ========== الاسم (مع توسيط وتصغير تلقائي) ==========
+        const fullName = `${employee.firstName} ${employee.lastName}`;
+        let nameFontSize = positions.front.nameFontSize;
+        const maxNameWidth = canvas.width * 0.85;
+        const minFontSize = 30;
+        
+        ctx.font = `900 ${nameFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
+        let nameWidth = ctx.measureText(fullName).width;
+        
+        while (nameWidth > maxNameWidth && nameFontSize > minFontSize) {
+            nameFontSize -= 2;
+            ctx.font = `900 ${nameFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
+            nameWidth = ctx.measureText(fullName).width;
+        }
+        
+        // توسيط الاسم
+        ctx.textAlign = 'center';
+        const nameX = canvas.width / 2;
+        ctx.fillText(fullName, nameX, positions.front.nameY);
+        
+        // ========== رقم البادج (بعد "Badge NO:") ==========
+        let badgeFontSize = positions.front.badgeFontSize;
+        const maxBadgeWidth = canvas.width * 0.50;
+        
+        ctx.font = `900 ${badgeFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
+        let badgeWidth = ctx.measureText(employee.badge).width;
+        
+        while (badgeWidth > maxBadgeWidth && badgeFontSize > minFontSize) {
+            badgeFontSize -= 2;
+            ctx.font = `900 ${badgeFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
+            badgeWidth = ctx.measureText(employee.badge).width;
+        }
+        
+        // محاذاة لليسار (بعد "Badge NO:")
+        ctx.textAlign = 'left';
+        ctx.fillText(employee.badge, positions.front.badgeX, positions.front.badgeY);
+    }
 }
 
 function drawBackCard(canvas, employee, hideText = false) {
@@ -197,7 +223,6 @@ function drawBackCard(canvas, employee, hideText = false) {
         ctx.drawImage(backTemplate, 0, 0, backTemplate.width, backTemplate.height);
     }
     
-    // Only draw barcode and text if hideText is false
     if (!hideText) {
         const barcodeCanvas = document.createElement('canvas');
         try {
@@ -296,7 +321,6 @@ function makeDraggable(element, side, itemType) {
                 positions.back.barcodeX = finalX;
                 positions.back.barcodeY = finalY;
             } else if (itemType === 'text') {
-                // Update both X and Y for text
                 positions.back.textX = finalX;
                 positions.back.textY = finalY;
             }
@@ -304,9 +328,9 @@ function makeDraggable(element, side, itemType) {
         
         const employee = excelData[0];
         if (side === 'front') {
-            drawFrontCard(canvas, employee, true); // Hide text in preview mode
+            drawFrontCard(canvas, employee, true);
         } else {
-            drawBackCard(canvas, employee, true); // Hide text in preview mode
+            drawBackCard(canvas, employee, true);
         }
         
         console.log('Updated positions:', positions);
@@ -359,7 +383,6 @@ function generatePreview() {
         backCanvas.width = backTemplate.width;
         backCanvas.height = backTemplate.height;
         
-        // Draw cards without text (will be shown by draggable elements)
         drawFrontCard(frontCanvas, employee, true);
         drawBackCard(backCanvas, employee, true);
         
@@ -404,7 +427,6 @@ function generatePreview() {
         backContainer.appendChild(barcodeDiv);
         makeDraggable(barcodeDiv, 'back', 'barcode');
         
-        // Text is now movable in X and Y directions
         const barcodeTextDiv = document.createElement('div');
         barcodeTextDiv.className = 'draggable-item';
         barcodeTextDiv.textContent = employee.badge;
@@ -476,13 +498,14 @@ function generateAllCards() {
             progressBarFill.style.width = progress + '%';
             progressBarFill.textContent = progress + '%';
             
-            if (processed === excelData.length) {
-                setTimeout(() => {
-                    progressBar.style.display = 'none';
-                    alert(`✅ Generated ${processed} cards successfully!\n\nCard size: ${maxWidth} × ${maxHeight}px`);
-                    document.getElementById('downloadBtn').style.display = 'inline-block';
-                }, 500);
-            }
+           if (processed === excelData.length) {
+    setTimeout(() => {
+        progressBar.style.display = 'none';
+        alert(`✅ Generated ${processed} cards successfully!\n\nCard size: ${maxWidth} × ${maxHeight}px`);
+        document.getElementById('downloadBtn').style.display = 'inline-block';
+        document.getElementById('downloadZipBtn').style.display = 'inline-block';  // ← أضف هذا السطر
+    }, 500);
+}
         }, index * 100);
     });
 }
@@ -538,69 +561,50 @@ function closePrintPreview() {
 }
 
 // ============================
-// Download All Cards
+// Download All Cards as ZIP
 // ============================
-function downloadAllCards() {
+async function downloadAllCards() {
     if (!generatedCards.length) {
         alert('❌ Please generate cards first');
         return;
     }
     
-    const downloadMethod = confirm('Choose download method:\n\nOK = Combined PDF (Front + Back together)\nCancel = Separate images');
+    try {
+        alert('⏳ Preparing ZIP file...\n\nThis may take a moment for large batches.');
+        
+        const zip = new JSZip();
+        const cardsFolder = zip.folder("Badge_Cards");
+        
+        for (let i = 0; i < generatedCards.length; i++) {
+    const card = generatedCards[i];
+    const paddedIndex = String(i + 1).padStart(4, '0'); // 0001, 0002, 0003...
+    const baseName = `${paddedIndex}_${card.employee.firstName}_${card.employee.lastName}_Badge_${card.employee.badge}`;
     
-    if (downloadMethod) {
-        generatedCards.forEach((card, index) => {
-            setTimeout(() => {
-                const combinedCanvas = document.createElement('canvas');
-                const img1 = new Image();
-                const img2 = new Image();
-                
-                img1.onload = function() {
-                    img2.onload = function() {
-                        combinedCanvas.width = img1.width + img2.width + 40;
-                        combinedCanvas.height = Math.max(img1.height, img2.height) + 40;
-                        
-                        const ctx = combinedCanvas.getContext('2d');
-                        ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(0, 0, combinedCanvas.width, combinedCanvas.height);
-                        
-                        ctx.fillStyle = '#333';
-                        ctx.font = 'bold 20px Arial';
-                        ctx.fillText('FRONT', 20, 30);
-                        ctx.drawImage(img1, 20, 50);
-                        
-                        ctx.fillText('BACK', img1.width + 60, 30);
-                        ctx.drawImage(img2, img1.width + 60, 50);
-                        
-                        const link = document.createElement('a');
-                        link.href = combinedCanvas.toDataURL('image/png');
-                        link.download = `${card.employee.firstName}_${card.employee.lastName}_Badge_${card.employee.badge}.png`;
-                        link.click();
-                    };
-                    img2.src = card.back;
-                };
-                img1.src = card.front;
-            }, index * 500);
+    const frontBlob = await fetch(card.front).then(r => r.blob());
+    const backBlob = await fetch(card.back).then(r => r.blob());
+    
+    
+    cardsFolder.file(`${baseName}_FRONT.png`, frontBlob);
+    cardsFolder.file(`${baseName}_BACK.png`, backBlob);
+}
+        
+        const content = await zip.generateAsync({
+            type: "blob",
+            compression: "DEFLATE",
+            compressionOptions: { level: 6 }
         });
         
-        alert(`✅ Downloading ${generatedCards.length} combined cards...`);
-    } else {
-        generatedCards.forEach((card, index) => {
-            setTimeout(() => {
-                const frontLink = document.createElement('a');
-                frontLink.href = card.front;
-                frontLink.download = `${card.employee.firstName}_${card.employee.lastName}_${card.employee.badge}_FRONT.png`;
-                frontLink.click();
-                
-                setTimeout(() => {
-                    const backLink = document.createElement('a');
-                    backLink.href = card.back;
-                    backLink.download = `${card.employee.firstName}_${card.employee.lastName}_${card.employee.badge}_BACK.png`;
-                    backLink.click();
-                }, 100);
-            }, index * 400);
-        });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(content);
+        link.download = `Badge_Cards_${generatedCards.length}_Employees.zip`;
+        link.click();
         
-        alert(`✅ Downloading ${generatedCards.length * 2} images...`);
+        setTimeout(() => URL.revokeObjectURL(link.href), 100);
+        
+        alert(`✅ ZIP file downloaded successfully!\n\n${generatedCards.length} employees\n${generatedCards.length * 2} images (Front + Back)`);
+        
+    } catch (error) {
+        console.error('ZIP creation error:', error);
+        alert('❌ Error creating ZIP file: ' + error.message);
     }
 }
