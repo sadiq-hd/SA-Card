@@ -276,6 +276,35 @@ button:disabled {
     color: #3b82f6;
 }
 
+.print-page {
+    background: white;
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.preview-info {
+    background: #f3f4f6;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+
+.preview-info p {
+    margin: 5px 0;
+    font-weight: bold;
+    color: #333;
+}
+
+.card-image {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
 /* ============================
    Responsive Design
    ============================ */
@@ -305,31 +334,61 @@ button:disabled {
     }
 }
 @media print {
-  body * {
-    display: none;
-  }
+    /* إخفاء كل شي */
+    body * {
+        visibility: hidden;
+        margin: 0;
+        padding: 0;
+    }
 
-  #printPreview, #printPreview * {
-    display: block;
-  }
+    /* إظهار محتوى الطباعة فقط */
+    #printContent,
+    #printContent * {
+        visibility: visible;
+    }
 
-  .print-card-pair {
-    page-break-after: always;
-  }
+    #printContent {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
 
-  .card-sides {
-    display: flex;
-    flex-direction: column;
-  }
+    /* كل صفحة منفصلة */
+    .print-page {
+        page-break-after: always;
+        page-break-inside: avoid;
+        margin: 0;
+        padding: 0;
+        border: none;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+    }
 
-  img {
-    width: 85.6mm;
-    height: 53.98mm;
-    display: block;
-  }
+    /* إخفاء معلومات Preview */
+    .preview-info {
+        display: none !important;
+    }
 
-  @page {
-    size: 85.6mm 53.98mm;
-    margin: 0;
-  }
+    /* الصورة تملأ الصفحة */
+    .card-image {
+        width: 85.6mm !important;
+        height: 53.98mm !important;
+        max-width: 85.6mm !important;
+        max-height: 53.98mm !important;
+        display: block !important;
+        margin: 0 auto !important;
+        border: none !important;
+        box-shadow: none !important;
+        object-fit: contain;
+    }
+
+    /* حجم الصفحة = حجم البطاقة */
+    @page {
+        size: 85.6mm 53.98mm;
+        margin: 0;
+    }
 }

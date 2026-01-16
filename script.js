@@ -195,20 +195,32 @@ function drawFrontCard(canvas, employee, hideText = false) {
         
         // ========== رقم البادج (بعد "Badge NO:") ==========
         let badgeFontSize = positions.front.badgeFontSize;
-        const maxBadgeWidth = canvas.width * 0.50;
-        
-        ctx.font = `900 ${badgeFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
-        let badgeWidth = ctx.measureText(employee.badge).width;
-        
-        while (badgeWidth > maxBadgeWidth && badgeFontSize > minFontSize) {
-            badgeFontSize -= 2;
-            ctx.font = `900 ${badgeFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
-            badgeWidth = ctx.measureText(employee.badge).width;
-        }
-        
-        // محاذاة لليسار (بعد "Badge NO:")
-        ctx.textAlign = 'left';
-        ctx.fillText(employee.badge, positions.front.badgeX, positions.front.badgeY);
+const maxBadgeWidth = canvas.width * 0.85;
+
+ctx.font = `900 ${badgeFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
+let badgeWidth = ctx.measureText(employee.badge).width;
+
+while (badgeWidth > maxBadgeWidth && badgeFontSize > minFontSize) {
+    badgeFontSize -= 2;
+    ctx.font = `900 ${badgeFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
+    badgeWidth = ctx.measureText(employee.badge).width;
+}
+
+// توسيط مع إزاحة بسيطة لليمين
+ctx.textAlign = 'center';
+const badgeLength = employee.badge.length;
+let badgeOffset;
+
+if (badgeLength <= 6) {
+    badgeOffset = 30;  // 6 أرقام أو أقل
+} else if (badgeLength === 7) {
+    badgeOffset = 40;  // 7 أرقام
+} else {
+    badgeOffset = 60;  // 8 أرقام أو أكثر
+}
+
+const badgeX = (canvas.width / 2) + badgeOffset;
+ctx.fillText(employee.badge, badgeX, positions.front.badgeY);
     }
 }
 
@@ -489,8 +501,8 @@ function generateAllCards() {
             
             generatedCards.push({
                 employee: employee,
-                front: frontCanvas.toDataURL('image/png'),
-                back: backCanvas.toDataURL('image/png')
+                front: frontCanvas.toDataURL('image/png', 1.0),
+                back: backCanvas.toDataURL('image/png', 1.0)
             });
             
             processed++;
@@ -524,33 +536,39 @@ function showPrintPreview() {
     
     printContent.innerHTML = '';
     
+    // كل بطاقة Front ثم Back في صفحة منفصلة
     generatedCards.forEach((card, index) => {
-        const cardPair = document.createElement('div');
-        cardPair.className = 'print-card-pair';
-        
-        cardPair.innerHTML = `
-            <h3>${card.employee.firstName} ${card.employee.lastName} - Badge #${card.employee.badge}</h3>
-            <div class="card-sides">
-                <div class="card-side">
-                    <h4>📄 Front Side</h4>
-                    <img src="${card.front}" alt="Front Card">
-                </div>
-                <div class="card-side">
-                    <h4>📄 Back Side</h4>
-                    <img src="${card.back}" alt="Back Card">
-                </div>
+        // صفحة Front
+        const frontPage = document.createElement('div');
+        frontPage.className = 'print-page';
+        frontPage.innerHTML = `
+            <div class="preview-info">
+                <p>Card ${index + 1}/${generatedCards.length} - FRONT</p>
+                <p>${card.employee.firstName} ${card.employee.lastName} - Badge #${card.employee.badge}</p>
             </div>
+            <img src="${card.front}" alt="Front Card" class="card-image">
         `;
+        printContent.appendChild(frontPage);
         
-        printContent.appendChild(cardPair);
+        // صفحة Back
+        const backPage = document.createElement('div');
+        backPage.className = 'print-page';
+        backPage.innerHTML = `
+            <div class="preview-info">
+                <p>Card ${index + 1}/${generatedCards.length} - BACK</p>
+                <p>${card.employee.firstName} ${card.employee.lastName} - Badge #${card.employee.badge}</p>
+            </div>
+            <img src="${card.back}" alt="Back Card" class="card-image">
+        `;
+        printContent.appendChild(backPage);
     });
     
     printPreview.style.display = 'block';
     printPreview.scrollIntoView({ behavior: 'smooth' });
     
-    alert(`✅ Print preview ready!\n\n${generatedCards.length} cards loaded.\n\nScroll down to review, then click "Print All Cards"`);
+    const totalPages = generatedCards.length * 2;
+    alert(`✅ Print preview ready!\n\n${generatedCards.length} employees\n${totalPages} pages (Front + Back)\n\nScroll down to review, then click "Print All Cards"`);
 }
-
 function printCards() {
     window.print();
 }
