@@ -6,32 +6,76 @@ let frontTemplate = null;
 let backTemplate = null;
 let generatedCards = [];
 
-// Position settings (stored in memory)
+// Fixed positions - no dragging needed
 let positions = {
     front: {
-        nameX: 150,
-        nameY: 300,
-        nameFontSize: 62,
-        badgeX: 150,
-        badgeY: 380,
-        badgeFontSize: 62
+        nameY: 391,          // Name vertical position
+        nameFontSize: 62,    // Name font size
+        badgeY: 457,         // Badge number vertical position
+        badgeFontSize: 62    // Badge number font size
     },
     back: {
-        barcodeX: 50,
-        barcodeY: 150,
-        barcodeWidth: 450,
-        barcodeHeight: 100,
-        textX: 275,
-        textY: 320,
-        textSize: 28
+        barcodeY: 717,       // Barcode vertical position
+        barcodeWidth: 450,   // Barcode width
+        barcodeHeight: 100,  // Barcode height
+        textY: 820,          // Badge text vertical position
+        textSize: 28         // Badge text font size
     }
 };
 
 // ============================
-// File Upload Handlers
+// Load Templates on Page Load
 // ============================
+window.addEventListener('DOMContentLoaded', function() {
+    const previewBtn = document.querySelector('.btn-preview');
+    const generateBtn = document.querySelector('.btn-generate');
+    
+    previewBtn.disabled = true;
+    generateBtn.disabled = true;
+    previewBtn.textContent = '⏳ Loading Templates...';
+    generateBtn.textContent = '⏳ Loading Templates...';
+    
+    // Load Front Template
+    const frontImg = new Image();
+    frontImg.onload = function() {
+        frontTemplate = frontImg;
+        console.log('Front template loaded:', frontImg.width, 'x', frontImg.height);
+        checkTemplatesReady();
+    };
+    frontImg.onerror = function() {
+        console.error('Failed to load front template. Check file path: assets/Front.png');
+        alert('❌ Failed to load Front template!\nCheck that assets/Front.png exists.');
+    };
+    frontImg.src = 'assets/Front.png';
+    
+    // Load Back Template
+    const backImg = new Image();
+    backImg.onload = function() {
+        backTemplate = backImg;
+        console.log('Back template loaded:', backImg.width, 'x', backImg.height);
+        checkTemplatesReady();
+    };
+    backImg.onerror = function() {
+        console.error('Failed to load back template. Check file path: assets/Back.png');
+        alert('❌ Failed to load Back template!\nCheck that assets/Back.png exists.');
+    };
+    backImg.src = 'assets/Back.png';
+    
+    // Enable buttons when both templates are loaded
+    function checkTemplatesReady() {
+        if (frontTemplate && backTemplate) {
+            previewBtn.disabled = false;
+            generateBtn.disabled = false;
+            previewBtn.textContent = '🔍 Preview First Card';
+            generateBtn.textContent = '📦 Generate All Cards';
+            console.log('✅ All templates loaded successfully!');
+        }
+    }
+});
 
-// Handle Excel Upload
+// ============================
+// File Upload Handler
+// ============================
 document.getElementById('excelFile').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -61,6 +105,7 @@ document.getElementById('excelFile').addEventListener('change', function(e) {
                 let firstName = '';
                 let lastName = '';
                 
+                // Find badge column
                 for (let key of allKeys) {
                     const lowerKey = key.toLowerCase().trim();
                     if (lowerKey.includes('badge')) {
@@ -69,6 +114,7 @@ document.getElementById('excelFile').addEventListener('change', function(e) {
                     }
                 }
                 
+                // Find first name column
                 for (let key of allKeys) {
                     const lowerKey = key.toLowerCase().trim();
                     if (lowerKey.includes('first')) {
@@ -77,6 +123,7 @@ document.getElementById('excelFile').addEventListener('change', function(e) {
                     }
                 }
                 
+                // Find last name column
                 for (let key of allKeys) {
                     const lowerKey = key.toLowerCase().trim();
                     if (lowerKey.includes('last')) {
@@ -115,50 +162,11 @@ document.getElementById('excelFile').addEventListener('change', function(e) {
     reader.readAsArrayBuffer(file);
 });
 
-// Handle Front Template Upload
-document.getElementById('frontImage').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        const img = new Image();
-        img.onload = function() {
-            frontTemplate = img;
-            document.getElementById('frontBox').classList.add('uploaded');
-            document.getElementById('frontBox').querySelector('label').innerHTML = 
-                '✅<br>Front Template<br><small>Ready to use</small>';
-        };
-        img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
-});
-
-// Handle Back Template Upload
-document.getElementById('backImage').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        const img = new Image();
-        img.onload = function() {
-            backTemplate = img;
-            document.getElementById('backBox').classList.add('uploaded');
-            document.getElementById('backBox').querySelector('label').innerHTML = 
-                '✅<br>Back Template<br><small>Ready to use</small>';
-            console.log('Back template loaded:', img.width, 'x', img.height);
-        };
-        img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
-});
-
 // ============================
 // Canvas Drawing Functions
 // ============================
 
-function drawFrontCard(canvas, employee, hideText = false) {
+function drawFrontCard(canvas, employee) {
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -169,62 +177,59 @@ function drawFrontCard(canvas, employee, hideText = false) {
         ctx.drawImage(frontTemplate, 0, 0, frontTemplate.width, frontTemplate.height);
     }
     
-    if (!hideText) {
-        ctx.fillStyle = '#323232';
-        ctx.textBaseline = 'top';
-        
-        // ========== الاسم (مع توسيط وتصغير تلقائي) ==========
-        const fullName = `${employee.firstName} ${employee.lastName}`;
-        let nameFontSize = positions.front.nameFontSize;
-        const maxNameWidth = canvas.width * 0.85;
-        const minFontSize = 30;
-        
+    ctx.fillStyle = '#323232';
+    ctx.textBaseline = 'top';
+    
+    // Draw Name (centered with auto-sizing)
+    const fullName = `${employee.firstName} ${employee.lastName}`;
+    let nameFontSize = positions.front.nameFontSize;
+    const maxNameWidth = canvas.width * 0.85;
+    const minFontSize = 30;
+    
+    ctx.font = `900 ${nameFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
+    let nameWidth = ctx.measureText(fullName).width;
+    
+    while (nameWidth > maxNameWidth && nameFontSize > minFontSize) {
+        nameFontSize -= 2;
         ctx.font = `900 ${nameFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
-        let nameWidth = ctx.measureText(fullName).width;
-        
-        while (nameWidth > maxNameWidth && nameFontSize > minFontSize) {
-            nameFontSize -= 2;
-            ctx.font = `900 ${nameFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
-            nameWidth = ctx.measureText(fullName).width;
-        }
-        
-        // توسيط الاسم
-        ctx.textAlign = 'center';
-        const nameX = canvas.width / 2;
-        ctx.fillText(fullName, nameX, positions.front.nameY);
-        
-        // ========== رقم البادج (بعد "Badge NO:") ==========
-        let badgeFontSize = positions.front.badgeFontSize;
-const maxBadgeWidth = canvas.width * 0.85;
-
-ctx.font = `900 ${badgeFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
-let badgeWidth = ctx.measureText(employee.badge).width;
-
-while (badgeWidth > maxBadgeWidth && badgeFontSize > minFontSize) {
-    badgeFontSize -= 2;
-    ctx.font = `900 ${badgeFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
-    badgeWidth = ctx.measureText(employee.badge).width;
-}
-
-// توسيط مع إزاحة بسيطة لليمين
-ctx.textAlign = 'center';
-const badgeLength = employee.badge.length;
-let badgeOffset;
-
-if (badgeLength <= 6) {
-    badgeOffset = 30;  // 6 أرقام أو أقل
-} else if (badgeLength === 7) {
-    badgeOffset = 40;  // 7 أرقام
-} else {
-    badgeOffset = 60;  // 8 أرقام أو أكثر
-}
-
-const badgeX = (canvas.width / 2) + badgeOffset;
-ctx.fillText(employee.badge, badgeX, positions.front.badgeY);
+        nameWidth = ctx.measureText(fullName).width;
     }
+    
+    ctx.textAlign = 'center';
+    const nameX = canvas.width / 2;
+    ctx.fillText(fullName, nameX, positions.front.nameY);
+    
+    // Draw Badge Number (centered with offset and auto-sizing)
+    let badgeFontSize = positions.front.badgeFontSize;
+    const maxBadgeWidth = canvas.width * 0.85;
+
+    ctx.font = `900 ${badgeFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
+    let badgeWidth = ctx.measureText(employee.badge).width;
+
+    while (badgeWidth > maxBadgeWidth && badgeFontSize > minFontSize) {
+        badgeFontSize -= 2;
+        ctx.font = `900 ${badgeFontSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
+        badgeWidth = ctx.measureText(employee.badge).width;
+    }
+
+    // Center with slight offset (adjusts based on badge length)
+    ctx.textAlign = 'center';
+    const badgeLength = employee.badge.length;
+    let badgeOffset;
+
+    if (badgeLength <= 6) {
+        badgeOffset = 30;
+    } else if (badgeLength === 7) {
+        badgeOffset = 40;
+    } else {
+        badgeOffset = 60;
+    }
+
+    const badgeX = (canvas.width / 2) + badgeOffset;
+    ctx.fillText(employee.badge, badgeX, positions.front.badgeY);
 }
 
-function drawBackCard(canvas, employee, hideText = false) {
+function drawBackCard(canvas, employee) {
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -232,124 +237,55 @@ function drawBackCard(canvas, employee, hideText = false) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     if (backTemplate) {
+        // Rotate 180 degrees for proper printing orientation
+        ctx.save();
+        ctx.translate(canvas.width, canvas.height);
+        ctx.rotate(Math.PI);
         ctx.drawImage(backTemplate, 0, 0, backTemplate.width, backTemplate.height);
+        ctx.restore();
     }
     
-    if (!hideText) {
-        const barcodeCanvas = document.createElement('canvas');
-        try {
-            JsBarcode(barcodeCanvas, employee.badge, {
-                format: 'CODE39',
-                width: 3,
-                height: 150,
-                displayValue: false,
-                margin: 0
-            });
+    // Rotate text 180 degrees to match template
+    ctx.save();
+    ctx.translate(canvas.width, canvas.height);
+    ctx.rotate(Math.PI);
+    
+    // Draw Barcode (centered)
+    const barcodeCanvas = document.createElement('canvas');
+    try {
+        JsBarcode(barcodeCanvas, employee.badge, {
+            format: 'CODE39',
+            width: 3,
+            height: 150,
+            displayValue: false,
+            margin: 0
+        });
+        
+        if (barcodeCanvas.width > 0) {
+            const barcodeX = (canvas.width - positions.back.barcodeWidth) / 2;
             
-            if (barcodeCanvas.width > 0) {
-                ctx.drawImage(
-                    barcodeCanvas,
-                    positions.back.barcodeX,
-                    positions.back.barcodeY,
-                    positions.back.barcodeWidth,
-                    positions.back.barcodeHeight
-                );
-            }
-        } catch (error) {
-            console.error('Barcode generation error:', error);
+            ctx.drawImage(
+                barcodeCanvas,
+                barcodeX,
+                positions.back.barcodeY,
+                positions.back.barcodeWidth,
+                positions.back.barcodeHeight
+            );
         }
-        
-        ctx.fillStyle = '#323232';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.font = `900 ${positions.back.textSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
-        ctx.fillText(employee.badge, positions.back.textX, positions.back.textY);
+    } catch (error) {
+        console.error('Barcode generation error:', error);
     }
-}
-
-// ============================
-// Draggable Elements
-// ============================
-
-function makeDraggable(element, side, itemType) {
-    let isDragging = false;
-    let startX, startY, initialLeft, initialTop;
     
-    element.addEventListener('mousedown', function(e) {
-        isDragging = true;
-        element.classList.add('active');
-        
-        startX = e.clientX;
-        startY = e.clientY;
-        initialLeft = parseInt(element.style.left) || 0;
-        initialTop = parseInt(element.style.top) || 0;
-        
-        e.preventDefault();
-        e.stopPropagation();
-    });
+    // Draw Badge Text (centered)
+    ctx.fillStyle = '#323232';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.font = `900 ${positions.back.textSize}px 'Noto Kufi Arabic', Arial, sans-serif`;
     
-    const handleMouseMove = function(e) {
-        if (!isDragging) return;
-        
-        const deltaX = e.clientX - startX;
-        const deltaY = e.clientY - startY;
-        
-        const newLeft = initialLeft + deltaX;
-        const newTop = initialTop + deltaY;
-        
-        element.style.left = newLeft + 'px';
-        element.style.top = newTop + 'px';
-        
-        e.preventDefault();
-    };
+    const badgeTextX = canvas.width / 2;
+    ctx.fillText(employee.badge, badgeTextX, positions.back.textY);
     
-    const handleMouseUp = function(e) {
-        if (!isDragging) return;
-        
-        isDragging = false;
-        element.classList.remove('active');
-        
-        const container = element.parentElement;
-        const canvas = container.querySelector('canvas');
-        const canvasRect = canvas.getBoundingClientRect();
-        const elementRect = element.getBoundingClientRect();
-        
-        const scaleX = canvas.width / canvasRect.width;
-        const scaleY = canvas.height / canvasRect.height;
-        
-        const finalX = Math.round((elementRect.left - canvasRect.left) * scaleX);
-        const finalY = Math.round((elementRect.top - canvasRect.top) * scaleY);
-        
-        if (side === 'front') {
-            if (itemType === 'name') {
-                positions.front.nameX = finalX;
-                positions.front.nameY = finalY;
-            } else if (itemType === 'badge') {
-                positions.front.badgeX = finalX;
-                positions.front.badgeY = finalY;
-            }
-        } else if (side === 'back') {
-            if (itemType === 'barcode') {
-                positions.back.barcodeX = finalX;
-                positions.back.barcodeY = finalY;
-            } else if (itemType === 'text') {
-                positions.back.textX = finalX;
-                positions.back.textY = finalY;
-            }
-        }
-        
-        const employee = excelData[0];
-        if (side === 'front') {
-            drawFrontCard(canvas, employee, true);
-        } else {
-            drawBackCard(canvas, employee, true);
-        }
-        
-        console.log('Updated positions:', positions);
-    };
-    
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    ctx.restore();
 }
 
 // ============================
@@ -358,10 +294,6 @@ function makeDraggable(element, side, itemType) {
 function generatePreview() {
     if (!excelData.length) {
         alert('❌ Please upload Excel file first');
-        return;
-    }
-    if (!frontTemplate || !backTemplate) {
-        alert('❌ Please upload both templates');
         return;
     }
     
@@ -373,15 +305,11 @@ function generatePreview() {
         <div class="preview-cards">
             <div class="card-preview">
                 <h4>Front Card</h4>
-                <div class="positioning-container" id="frontContainer">
-                    <canvas id="previewFront"></canvas>
-                </div>
+                <canvas id="previewFront"></canvas>
             </div>
             <div class="card-preview">
-                <h4>Back Card</h4>
-                <div class="positioning-container" id="backContainer">
-                    <canvas id="previewBack"></canvas>
-                </div>
+                <h4>Back Card (Rotated for Printing)</h4>
+                <canvas id="previewBack"></canvas>
             </div>
         </div>
     `;
@@ -395,61 +323,8 @@ function generatePreview() {
         backCanvas.width = backTemplate.width;
         backCanvas.height = backTemplate.height;
         
-        drawFrontCard(frontCanvas, employee, true);
-        drawBackCard(backCanvas, employee, true);
-        
-        const frontContainer = document.getElementById('frontContainer');
-        const canvasRect = frontCanvas.getBoundingClientRect();
-        const scaleX = canvasRect.width / frontCanvas.width;
-        const scaleY = canvasRect.height / frontCanvas.height;
-        
-        const nameDiv = document.createElement('div');
-        nameDiv.className = 'draggable-item';
-        nameDiv.textContent = `${employee.firstName} ${employee.lastName}`;
-        nameDiv.style.left = (positions.front.nameX * scaleX) + 'px';
-        nameDiv.style.top = (positions.front.nameY * scaleY) + 'px';
-        nameDiv.style.fontSize = (positions.front.nameFontSize * scaleX) + 'px';
-        frontContainer.appendChild(nameDiv);
-        makeDraggable(nameDiv, 'front', 'name');
-        
-        const badgeDiv = document.createElement('div');
-        badgeDiv.className = 'draggable-item';
-        badgeDiv.textContent = employee.badge;
-        badgeDiv.style.left = (positions.front.badgeX * scaleX) + 'px';
-        badgeDiv.style.top = (positions.front.badgeY * scaleY) + 'px';
-        badgeDiv.style.fontSize = (positions.front.badgeFontSize * scaleX) + 'px';
-        frontContainer.appendChild(badgeDiv);
-        makeDraggable(badgeDiv, 'front', 'badge');
-        
-        const backContainer = document.getElementById('backContainer');
-        const backCanvasRect = backCanvas.getBoundingClientRect();
-        const backScaleX = backCanvasRect.width / backCanvas.width;
-        const backScaleY = backCanvasRect.height / backCanvas.height;
-        
-        const barcodeDiv = document.createElement('div');
-        barcodeDiv.className = 'draggable-item';
-        barcodeDiv.textContent = `Barcode`;
-        barcodeDiv.style.left = (positions.back.barcodeX * backScaleX) + 'px';
-        barcodeDiv.style.top = (positions.back.barcodeY * backScaleY) + 'px';
-        barcodeDiv.style.width = (positions.back.barcodeWidth * backScaleX) + 'px';
-        barcodeDiv.style.height = (positions.back.barcodeHeight * backScaleY) + 'px';
-        barcodeDiv.style.display = 'flex';
-        barcodeDiv.style.alignItems = 'center';
-        barcodeDiv.style.justifyContent = 'center';
-        backContainer.appendChild(barcodeDiv);
-        makeDraggable(barcodeDiv, 'back', 'barcode');
-        
-        const barcodeTextDiv = document.createElement('div');
-        barcodeTextDiv.className = 'draggable-item';
-        barcodeTextDiv.textContent = employee.badge;
-        barcodeTextDiv.style.left = (positions.back.textX * backScaleX) + 'px';
-        barcodeTextDiv.style.top = (positions.back.textY * backScaleY) + 'px';
-        barcodeTextDiv.style.fontSize = (positions.back.textSize * backScaleX) + 'px';
-        barcodeTextDiv.style.width = '200px';
-        barcodeTextDiv.style.textAlign = 'center';
-        backContainer.appendChild(barcodeTextDiv);
-        makeDraggable(barcodeTextDiv, 'back', 'text');
-        
+        drawFrontCard(frontCanvas, employee);
+        drawBackCard(backCanvas, employee);
     }, 100);
 }
 
@@ -459,10 +334,6 @@ function generatePreview() {
 function generateAllCards() {
     if (!excelData.length) {
         alert('❌ Please upload Excel file first');
-        return;
-    }
-    if (!frontTemplate || !backTemplate) {
-        alert('❌ Please upload both templates');
         return;
     }
     
@@ -510,71 +381,61 @@ function generateAllCards() {
             progressBarFill.style.width = progress + '%';
             progressBarFill.textContent = progress + '%';
             
-           if (processed === excelData.length) {
-    setTimeout(() => {
-        progressBar.style.display = 'none';
-        alert(`✅ Generated ${processed} cards successfully!\n\nCard size: ${maxWidth} × ${maxHeight}px`);
-        document.getElementById('downloadBtn').style.display = 'inline-block';
-        document.getElementById('downloadZipBtn').style.display = 'inline-block';  // ← أضف هذا السطر
-    }, 500);
-}
+            if (processed === excelData.length) {
+                setTimeout(() => {
+                    progressBar.style.display = 'none';
+                    alert(`✅ Generated ${processed} cards successfully!\n\nCard size: ${maxWidth} × ${maxHeight}px`);
+                    document.getElementById('previewBtn').style.display = 'inline-block';
+                    document.getElementById('downloadZipBtn').style.display = 'inline-block';
+                }, 500);
+            }
         }, index * 100);
     });
 }
 
 // ============================
-// Print Preview and Print Functions
+// Cards Preview Function
 // ============================
-function showPrintPreview() {
+function showCardsPreview() {
     if (!generatedCards.length) {
         alert('❌ Please generate cards first');
         return;
     }
     
-    const printContent = document.getElementById('printContent');
-    const printPreview = document.getElementById('printPreview');
+    const cardsContent = document.getElementById('cardsContent');
+    const cardsPreview = document.getElementById('cardsPreview');
     
-    printContent.innerHTML = '';
+    cardsContent.innerHTML = '';
     
-    // كل بطاقة Front ثم Back في صفحة منفصلة
     generatedCards.forEach((card, index) => {
-        // صفحة Front
-        const frontPage = document.createElement('div');
-        frontPage.className = 'print-page';
-        frontPage.innerHTML = `
-            <div class="preview-info">
-                <p>Card ${index + 1}/${generatedCards.length} - FRONT</p>
-                <p>${card.employee.firstName} ${card.employee.lastName} - Badge #${card.employee.badge}</p>
-            </div>
-            <img src="${card.front}" alt="Front Card" class="card-image">
-        `;
-        printContent.appendChild(frontPage);
+        const cardPair = document.createElement('div');
+        cardPair.className = 'card-pair';
         
-        // صفحة Back
-        const backPage = document.createElement('div');
-        backPage.className = 'print-page';
-        backPage.innerHTML = `
-            <div class="preview-info">
-                <p>Card ${index + 1}/${generatedCards.length} - BACK</p>
-                <p>${card.employee.firstName} ${card.employee.lastName} - Badge #${card.employee.badge}</p>
+        cardPair.innerHTML = `
+            <h3>Card ${index + 1}: ${card.employee.firstName} ${card.employee.lastName} - Badge #${card.employee.badge}</h3>
+            <div class="card-sides">
+                <div class="card-side">
+                    <h4>📄 Front Side</h4>
+                    <img src="${card.front}" alt="Front Card">
+                </div>
+                <div class="card-side">
+                    <h4>📄 Back Side (Rotated for Printing)</h4>
+                    <img src="${card.back}" alt="Back Card">
+                </div>
             </div>
-            <img src="${card.back}" alt="Back Card" class="card-image">
         `;
-        printContent.appendChild(backPage);
+        
+        cardsContent.appendChild(cardPair);
     });
     
-    printPreview.style.display = 'block';
-    printPreview.scrollIntoView({ behavior: 'smooth' });
+    cardsPreview.style.display = 'block';
+    cardsPreview.scrollIntoView({ behavior: 'smooth' });
     
-    const totalPages = generatedCards.length * 2;
-    alert(`✅ Print preview ready!\n\n${generatedCards.length} employees\n${totalPages} pages (Front + Back)\n\nScroll down to review, then click "Print All Cards"`);
-}
-function printCards() {
-    window.print();
+    alert(`✅ Preview ready!\n\n${generatedCards.length} cards loaded.\n\nScroll down to review all cards.`);
 }
 
-function closePrintPreview() {
-    document.getElementById('printPreview').style.display = 'none';
+function closeCardsPreview() {
+    document.getElementById('cardsPreview').style.display = 'none';
     document.getElementById('preview').scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -594,17 +455,16 @@ async function downloadAllCards() {
         const cardsFolder = zip.folder("Badge_Cards");
         
         for (let i = 0; i < generatedCards.length; i++) {
-    const card = generatedCards[i];
-    const paddedIndex = String(i + 1).padStart(4, '0'); // 0001, 0002, 0003...
-    const baseName = `${paddedIndex}_${card.employee.firstName}_${card.employee.lastName}_Badge_${card.employee.badge}`;
-    
-    const frontBlob = await fetch(card.front).then(r => r.blob());
-    const backBlob = await fetch(card.back).then(r => r.blob());
-    
-    
-    cardsFolder.file(`${baseName}_FRONT.png`, frontBlob);
-    cardsFolder.file(`${baseName}_BACK.png`, backBlob);
-}
+            const card = generatedCards[i];
+            const paddedIndex = String(i + 1).padStart(4, '0');
+            const baseName = `${paddedIndex}_${card.employee.firstName}_${card.employee.lastName}_Badge_${card.employee.badge}`;
+            
+            const frontBlob = await fetch(card.front).then(r => r.blob());
+            const backBlob = await fetch(card.back).then(r => r.blob());
+            
+            cardsFolder.file(`${baseName}_FRONT.png`, frontBlob);
+            cardsFolder.file(`${baseName}_BACK.png`, backBlob);
+        }
         
         const content = await zip.generateAsync({
             type: "blob",
