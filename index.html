@@ -20,27 +20,11 @@
         
         <!-- Upload Section -->
         <div class="upload-section">
-            <div class="upload-box" id="excelBox">
+            <div class="upload-box uploaded" id="excelBox">
                 <input type="file" id="excelFile" accept=".xlsx,.xls">
                 <label for="excelFile">
                     📊<br>Upload Excel File<br>
                     <small>(Badge #, First name, Last name)</small>
-                </label>
-            </div>
-            
-            <div class="upload-box" id="frontBox">
-                <input type="file" id="frontImage" accept="image/*">
-                <label for="frontImage">
-                    🎨<br>Front Template<br>
-                    <small>(Upload or drop image)</small>
-                </label>
-            </div>
-            
-            <div class="upload-box" id="backBox">
-                <input type="file" id="backImage" accept="image/*">
-                <label for="backImage">
-                    🎨<br>Back Template<br>
-                    <small>(Upload or drop image)</small>
                 </label>
             </div>
         </div>
@@ -48,18 +32,18 @@
         <!-- Info Box -->
         <div class="info-box">
             <strong>💡 Instructions:</strong><br>
-            1. Upload Excel file and both templates (Front & Back)<br>
+            1. Upload Excel file with employee data<br>
             2. Click "Preview First Card" to see the result<br>
-            3. Drag the name, badge number, and barcode to correct positions<br>
-            4. Click "Generate All Cards" then "Download All Cards"
+            3. Drag elements to adjust positions (numbers will show)<br>
+            4. Click "Generate All Cards" then "Download ZIP"
         </div>
 
         <!-- Action Buttons -->
         <div class="buttons">
             <button class="btn-preview" onclick="generatePreview()">🔍 Preview First Card</button>
             <button class="btn-generate" onclick="generateAllCards()">📦 Generate All Cards</button>
+            <button class="btn-download" onclick="showCardsPreview()" style="display:none;" id="previewBtn">👁️ View Cards</button>
             <button class="btn-download" onclick="downloadAllCards()" style="display:none;" id="downloadZipBtn">💾 Download ZIP</button>
-            <button class="btn-download" onclick="showPrintPreview()" style="display:none;" id="downloadBtn">🖨️ Print Preview</button>
         </div>
 
         <!-- Progress Bar -->
@@ -70,13 +54,12 @@
         <!-- Preview Section -->
         <div id="preview"></div>
         
-        <!-- Print Preview Section -->
-        <div id="printPreview" style="display:none;">
-            <div class="print-controls">
-                <button class="btn-print" onclick="printCards()">🖨️ Print All Cards</button>
-                <button class="btn-close" onclick="closePrintPreview()">❌ Close Preview</button>
+        <!-- Cards Preview Section -->
+        <div id="cardsPreview" style="display:none;">
+            <div class="preview-controls">
+                <button class="btn-close" onclick="closeCardsPreview()">❌ Close Preview</button>
             </div>
-            <div id="printContent"></div>
+            <div id="cardsContent"></div>
         </div>
     </div>
 
