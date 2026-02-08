@@ -2,6 +2,7 @@
 // Global Variables
 // ============================
 let excelData = [];
+let manualData = [];
 let frontTemplate = null;
 let backTemplate = null;
 let generatedCards = [];
@@ -72,6 +73,88 @@ window.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+// ============================
+// Get Combined Data
+// ============================
+function getCombinedData() {
+    // Combine manual data with Excel data
+    return [...manualData, ...excelData];
+}
+
+// ============================
+// Manual Entry Functions
+// ============================
+function addManualEntry() {
+    const firstName = document.getElementById('manualFirstName').value.trim();
+    const lastName = document.getElementById('manualLastName').value.trim();
+    const badge = document.getElementById('manualBadge').value.trim();
+    
+    if (!firstName || !lastName || !badge) {
+        alert('❌ Please fill all fields');
+        return;
+    }
+    
+    // Add to list
+    manualData.push({ firstName, lastName, badge });
+    
+    // Update display
+    updateManualEntriesList();
+    
+    // Clear inputs
+    document.getElementById('manualFirstName').value = '';
+    document.getElementById('manualLastName').value = '';
+    document.getElementById('manualBadge').value = '';
+    
+    // Focus on first name field
+    document.getElementById('manualFirstName').focus();
+    
+    console.log('Manual entry added:', { firstName, lastName, badge });
+}
+
+function updateManualEntriesList() {
+    const listDiv = document.getElementById('manualEntriesList');
+    const container = document.getElementById('entriesContainer');
+    const countSpan = document.getElementById('entriesCount');
+    
+    if (manualData.length === 0) {
+        listDiv.style.display = 'none';
+        return;
+    }
+    
+    listDiv.style.display = 'block';
+    countSpan.textContent = manualData.length;
+    
+    container.innerHTML = '';
+    
+    manualData.forEach((entry, index) => {
+        const entryDiv = document.createElement('div');
+        entryDiv.className = 'entry-item';
+        entryDiv.innerHTML = `
+            <div class="entry-info">
+                <strong>${entry.firstName} ${entry.lastName}</strong> - Badge #${entry.badge}
+            </div>
+            <button class="btn-remove" onclick="removeManualEntry(${index})">❌ Remove</button>
+        `;
+        container.appendChild(entryDiv);
+    });
+}
+
+function removeManualEntry(index) {
+    manualData.splice(index, 1);
+    updateManualEntriesList();
+    console.log('Manual entry removed at index:', index);
+}
+
+function clearManualEntries() {
+    if (manualData.length === 0) return;
+    
+    if (confirm(`Are you sure you want to delete all ${manualData.length} manual entries?`)) {
+        manualData = [];
+        updateManualEntriesList();
+        console.log('All manual entries cleared');
+    }
+}
 
 // ============================
 // File Upload Handler
@@ -146,7 +229,7 @@ document.getElementById('excelFile').addEventListener('change', function(e) {
             document.getElementById('excelBox').querySelector('label').innerHTML = 
                 `✅<br>Excel Loaded<br><small>${excelData.length} employees</small>`;
             
-            const msg = `✅ Loaded ${excelData.length} employees\n\n` +
+            const msg = `✅ Loaded ${excelData.length} employees from Excel\n\n` +
                         `First employee:\n` +
                         `First Name: "${excelData[0].firstName}"\n` +
                         `Last Name: "${excelData[0].lastName}"\n` +
@@ -292,16 +375,20 @@ function drawBackCard(canvas, employee) {
 // Preview Function
 // ============================
 function generatePreview() {
-    if (!excelData.length) {
-        alert('❌ Please upload Excel file first');
+    const allData = getCombinedData();
+    
+    if (allData.length === 0) {
+        alert('❌ Please add data first (manual entry or Excel file)');
         return;
     }
     
-    const employee = excelData[0];
+    const employee = allData[0];
     const previewDiv = document.getElementById('preview');
     
+    const dataSource = manualData.includes(employee) ? 'Manual Entry' : 'Excel';
+    
     previewDiv.innerHTML = `
-        <h2 class="preview-title">Preview: ${employee.firstName} ${employee.lastName} - Badge #${employee.badge}</h2>
+        <h2 class="preview-title">Preview: ${employee.firstName} ${employee.lastName} - Badge #${employee.badge} <small>(${dataSource})</small></h2>
         <div class="preview-cards">
             <div class="card-preview">
                 <h4>Front Card</h4>
@@ -332,8 +419,10 @@ function generatePreview() {
 // Generate All Cards
 // ============================
 function generateAllCards() {
-    if (!excelData.length) {
-        alert('❌ Please upload Excel file first');
+    const allData = getCombinedData();
+    
+    if (allData.length === 0) {
+        alert('❌ Please add data first (manual entry or Excel file)');
         return;
     }
     
@@ -358,7 +447,11 @@ function generateAllCards() {
     const maxWidth = Math.max(frontTemplate.width, backTemplate.width);
     const maxHeight = Math.max(frontTemplate.height, backTemplate.height);
     
-    excelData.forEach((employee, index) => {
+    const totalCount = allData.length;
+    const manualCount = manualData.length;
+    const excelCount = excelData.length;
+    
+    allData.forEach((employee, index) => {
         setTimeout(() => {
             const frontCanvas = document.createElement('canvas');
             frontCanvas.width = maxWidth;
@@ -377,14 +470,25 @@ function generateAllCards() {
             });
             
             processed++;
-            const progress = Math.round((processed / excelData.length) * 100);
+            const progress = Math.round((processed / totalCount) * 100);
             progressBarFill.style.width = progress + '%';
             progressBarFill.textContent = progress + '%';
             
-            if (processed === excelData.length) {
+            if (processed === totalCount) {
                 setTimeout(() => {
                     progressBar.style.display = 'none';
-                    alert(`✅ Generated ${processed} cards successfully!\n\nCard size: ${maxWidth} × ${maxHeight}px`);
+                    
+                    let message = `✅ Generated ${processed} cards successfully!\n\n`;
+                    if (manualCount > 0 && excelCount > 0) {
+                        message += `Manual entries: ${manualCount}\nExcel entries: ${excelCount}\n\n`;
+                    } else if (manualCount > 0) {
+                        message += `All from manual entries\n\n`;
+                    } else {
+                        message += `All from Excel file\n\n`;
+                    }
+                    message += `Card size: ${maxWidth} × ${maxHeight}px`;
+                    
+                    alert(message);
                     document.getElementById('previewBtn').style.display = 'inline-block';
                     document.getElementById('downloadZipBtn').style.display = 'inline-block';
                 }, 500);

@@ -18,9 +18,29 @@
     <div class="container">
         <h1>🪪 ID Card Generator</h1>
         
+        <!-- Manual Input Section -->
+        <div class="manual-input-section">
+            <h3>✍️ Manual Entry</h3>
+            <div class="input-form">
+                <input type="text" id="manualFirstName" placeholder="First Name">
+                <input type="text" id="manualLastName" placeholder="Last Name">
+                <input type="text" id="manualBadge" placeholder="Badge Number">
+                <button class="btn-add" onclick="addManualEntry()">➕ Add</button>
+            </div>
+            
+            <!-- Manual Entries List -->
+            <div id="manualEntriesList" style="display:none;">
+                <h4>📋 Entries (<span id="entriesCount">0</span>)</h4>
+                <div id="entriesContainer"></div>
+                <button class="btn-clear" onclick="clearManualEntries()">🗑️ Clear All</button>
+            </div>
+        </div>
+
+        <div class="separator">OR</div>
+
         <!-- Upload Section -->
         <div class="upload-section">
-            <div class="upload-box uploaded" id="excelBox">
+            <div class="upload-box" id="excelBox">
                 <input type="file" id="excelFile" accept=".xlsx,.xls">
                 <label for="excelFile">
                     📊<br>Upload Excel File<br>
@@ -32,10 +52,9 @@
         <!-- Info Box -->
         <div class="info-box">
             <strong>💡 Instructions:</strong><br>
-            1. Upload Excel file with employee data<br>
+            1. Enter data manually or upload Excel file (or both)<br>
             2. Click "Preview First Card" to see the result<br>
-            3. Drag elements to adjust positions (numbers will show)<br>
-            4. Click "Generate All Cards" then "Download ZIP"
+            3. Click "Generate All Cards" then "Download ZIP"
         </div>
 
         <!-- Action Buttons -->
